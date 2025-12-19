@@ -1,7 +1,7 @@
 // Invoice Management System with Authentication JavaScript
 
-// API Configuration - Update with your Render backend URL
-const API_BASE_URL = 'https://invoice-app-backend.onrender.com/api';
+// API Configuration
+const API_BASE_URL = 'http://localhost:5500/api';
 
 // API Helper Functions
 class ApiService {

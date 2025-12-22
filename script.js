@@ -1,7 +1,7 @@
-// Invoice Management System with Authentication JavaScript
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:5500/api';
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5500/api'  // Local development
+  : 'https://invoice-app-backend.onrender.com/api';  
 
 // API Helper Functions
 class ApiService {
@@ -19,9 +19,9 @@ class ApiService {
             config.body = JSON.stringify(config.body);
         }
 
-        try {
+        try { 
             const response = await fetch(url, config);
-            
+
             // Handle non-JSON responses
             let data;
             const contentType = response.headers.get('content-type');
@@ -31,24 +31,22 @@ class ApiService {
                 const text = await response.text();
                 throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             if (!response.ok) {
                 throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
             }
-            
+
             return data;
         } catch (error) {
             console.error('API Error:', error);
-            
+
             // Handle network errors
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            const msg = (error && error.message) ? error.message.toLowerCase() : '';
+            if (error.name === 'TypeError' || msg.includes('fetch') || msg.includes('failed')) {
                 throw new Error('Cannot connect to server. Make sure the backend is running on http://localhost:5500');
             }
-            
+
             // Re-throw with more context
-            if (error.message) {
-                throw error;
-            }
             throw new Error(error.message || 'Network error or server unavailable');
         }
     }
@@ -76,6 +74,7 @@ class ApiService {
     }
 }
 
+
 class ThemeManager {
     constructor() {
         this.currentTheme = this.loadTheme();
@@ -88,8 +87,10 @@ class ThemeManager {
     }
 
     setupThemeEventListeners() {
-        document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
-        document.getElementById('themeToggleAuth').addEventListener('click', () => this.toggleTheme());
+        const toggle = document.getElementById('themeToggle');
+        const toggleAuth = document.getElementById('themeToggleAuth');
+        if (toggle) toggle.addEventListener('click', () => this.toggleTheme());
+        if (toggleAuth) toggleAuth.addEventListener('click', () => this.toggleTheme());
     }
 
     toggleTheme() {
@@ -102,7 +103,7 @@ class ThemeManager {
         document.documentElement.setAttribute('data-theme', theme);
         const icon = document.getElementById('themeIcon');
         const iconAuth = document.getElementById('themeIconAuth');
-        
+
         if (icon) {
             icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
         }
@@ -132,19 +133,35 @@ class AuthManager {
     }
 
     setupAuthEventListeners() {
-        document.getElementById('loginFormElement').addEventListener('submit', (e) => this.handleLogin(e));
-        document.getElementById('signupFormElement').addEventListener('submit', (e) => this.handleSignup(e));
-        
-        document.getElementById('showSignup').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showSignupForm();
-        });
-        document.getElementById('showLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showLoginForm();
-        });
+        const loginForm = document.getElementById('loginFormElement');
+        const signupForm = document.getElementById('signupFormElement');
 
-        document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleLogin(e); });
+        }
+        if (signupForm) {
+            signupForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleSignup(e); });
+        }
+
+        const showSignup = document.getElementById('showSignup');
+        const showLogin = document.getElementById('showLogin');
+        if (showSignup) {
+            showSignup.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSignupForm();
+            });
+        }
+        if (showLogin) {
+            showLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showLoginForm();
+            });
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
     }
 
     checkAuthStatus() {
@@ -158,31 +175,44 @@ class AuthManager {
     }
 
     showAuthForm() {
-        document.getElementById('authContainer').style.display = 'flex';
-        document.getElementById('mainApp').style.display = 'none';
+        const authContainer = document.getElementById('authContainer');
+        const mainApp = document.getElementById('mainApp');
+        if (authContainer) authContainer.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'none';
     }
 
     showMainApp() {
-        document.getElementById('authContainer').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('userInfo').style.display = 'flex';
-        document.getElementById('addInvoiceBtn').style.display = 'inline-flex';
-        document.getElementById('themeToggle').style.display = 'inline-flex';
-        document.getElementById('userName').textContent = this.currentUser.name;
-        
+        const authContainer = document.getElementById('authContainer');
+        const mainApp = document.getElementById('mainApp');
+        const userInfo = document.getElementById('userInfo');
+        const addInvoiceBtn = document.getElementById('addInvoiceBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const userName = document.getElementById('userName');
+
+        if (authContainer) authContainer.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        if (userInfo) userInfo.style.display = 'flex';
+        if (addInvoiceBtn) addInvoiceBtn.style.display = 'inline-flex';
+        if (themeToggle) themeToggle.style.display = 'inline-flex';
+        if (userName) userName.textContent = this.currentUser.name;
+
         if (!window.invoiceManager) {
             window.invoiceManager = new InvoiceManager(this.currentUser.id);
         }
     }
 
     showLoginForm() {
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('signupForm').style.display = 'none';
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        if (loginForm) loginForm.style.display = 'block';
+        if (signupForm) signupForm.style.display = 'none';
     }
 
     showSignupForm() {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('signupForm').style.display = 'block';
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        if (loginForm) loginForm.style.display = 'none';
+        if (signupForm) signupForm.style.display = 'block';
     }
 
     async handleLogin(e) {
@@ -220,12 +250,12 @@ class AuthManager {
 
         try {
             await ApiService.post('/auth/register', { name, email, password });
-            
+
             // Auto-login after signup
             const user = await ApiService.post('/auth/login', { email, password });
             this.currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
-            
+
             this.showMainApp();
             this.showNotification('Account created successfully!', 'success');
         } catch (error) {
@@ -238,9 +268,9 @@ class AuthManager {
         localStorage.removeItem('currentUser');
         this.showAuthForm();
         this.showLoginForm();
-        
+
         window.invoiceManager = null;
-        
+
         this.showNotification('Logged out successfully', 'info');
     }
 
@@ -251,7 +281,7 @@ class AuthManager {
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
             <span>${message}</span>
         `;
-        
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -268,9 +298,9 @@ class AuthManager {
             font-weight: 500;
             animation: slideInRight 0.3s ease;
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => {
@@ -299,17 +329,27 @@ class InvoiceManager {
     }
 
     setupEventListeners() {
-        document.getElementById('addInvoiceBtn').addEventListener('click', () => this.openModal());
-        document.getElementById('createFirstInvoice').addEventListener('click', () => this.openModal());
-        document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
-        document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
-        document.getElementById('closeDeleteModal').addEventListener('click', () => this.closeDeleteModal());
-        document.getElementById('cancelDeleteBtn').addEventListener('click', () => this.closeDeleteModal());
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.confirmDelete());
+        const addBtn = document.getElementById('addInvoiceBtn');
+        const createFirst = document.getElementById('createFirstInvoice');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const closeDeleteModalBtn = document.getElementById('closeDeleteModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const invoiceForm = document.getElementById('invoiceForm');
+        const addItemBtn = document.getElementById('addItem');
 
-        document.getElementById('invoiceForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+        if (addBtn) addBtn.addEventListener('click', () => this.openModal());
+        if (createFirst) createFirst.addEventListener('click', () => this.openModal());
+        if (closeModalBtn) closeModalBtn.addEventListener('click', () => this.closeModal());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
+        if (closeDeleteModalBtn) closeDeleteModalBtn.addEventListener('click', () => this.closeDeleteModal());
+        if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => this.closeDeleteModal());
+        if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', () => this.confirmDelete());
 
-        document.getElementById('addItem').addEventListener('click', () => this.addItemRow());
+        if (invoiceForm) invoiceForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+        if (addItemBtn) addItemBtn.addEventListener('click', () => this.addItemRow());
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-item')) {
                 this.removeItemRow(e.target);
@@ -317,7 +357,7 @@ class InvoiceManager {
         });
 
         document.addEventListener('input', (e) => {
-            if (e.target.classList.contains('item-quantity') || 
+            if (e.target.classList.contains('item-quantity') ||
                 e.target.classList.contains('item-price')) {
                 this.calculateItemTotal(e.target);
             }
@@ -326,21 +366,25 @@ class InvoiceManager {
             }
         });
 
-        document.getElementById('searchInput').addEventListener('input', (e) => this.filterInvoices());
-        document.getElementById('statusFilter').addEventListener('change', () => this.filterInvoices());
-        document.getElementById('dateFilter').addEventListener('change', () => this.filterInvoices());
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        if (searchInput) searchInput.addEventListener('input', () => this.filterInvoices());
+        if (statusFilter) statusFilter.addEventListener('change', () => this.filterInvoices());
+        if (dateFilter) dateFilter.addEventListener('change', () => this.filterInvoices());
 
-        document.getElementById('invoiceModal').addEventListener('click', (e) => {
-            if (e.target.id === 'invoiceModal') {
-                this.closeModal();
-            }
-        });
-
-        document.getElementById('deleteModal').addEventListener('click', (e) => {
-            if (e.target.id === 'deleteModal') {
-                this.closeDeleteModal();
-            }
-        });
+        const invoiceModal = document.getElementById('invoiceModal');
+        const deleteModal = document.getElementById('deleteModal');
+        if (invoiceModal) {
+            invoiceModal.addEventListener('click', (e) => {
+                if (e.target.id === 'invoiceModal') this.closeModal();
+            });
+        }
+        if (deleteModal) {
+            deleteModal.addEventListener('click', (e) => {
+                if (e.target.id === 'deleteModal') this.closeDeleteModal();
+            });
+        }
     }
 
     setDefaultDates() {
@@ -349,64 +393,78 @@ class InvoiceManager {
         dueDate.setDate(dueDate.getDate() + 30);
         const dueDateString = dueDate.toISOString().split('T')[0];
 
-        document.getElementById('invoiceDate').value = today;
-        document.getElementById('dueDate').value = dueDateString;
+        const invoiceDate = document.getElementById('invoiceDate');
+        const dueDateEl = document.getElementById('dueDate');
+        if (invoiceDate) invoiceDate.value = today;
+        if (dueDateEl) dueDateEl.value = dueDateString;
     }
 
     generateInvoiceNumber() {
         const userInvoices = this.invoices.filter(inv => inv.userId === this.userId);
         const lastInvoice = userInvoices[userInvoices.length - 1];
         let nextNumber = 1;
-        
+
         if (lastInvoice && lastInvoice.invoiceNumber) {
             const lastNumber = parseInt(lastInvoice.invoiceNumber.replace('INV-', '')) || 0;
             nextNumber = lastNumber + 1;
         }
-        
-        document.getElementById('invoiceNumber').value = `INV-${nextNumber.toString().padStart(4, '0')}`;
+
+        const invoiceNumberEl = document.getElementById('invoiceNumber');
+        if (invoiceNumberEl) {
+            invoiceNumberEl.value = `INV-${nextNumber.toString().padStart(4, '0')}`;
+        }
     }
 
     openModal(invoiceId = null) {
         this.currentEditingId = invoiceId;
         const modal = document.getElementById('invoiceModal');
         const modalTitle = document.getElementById('modalTitle');
-        
+
         if (invoiceId) {
-            modalTitle.textContent = 'Edit Invoice';
+            if (modalTitle) modalTitle.textContent = 'Edit Invoice';
             this.populateForm(invoiceId);
         } else {
-            modalTitle.textContent = 'New Invoice';
+            if (modalTitle) modalTitle.textContent = 'New Invoice';
             this.resetForm();
             this.generateInvoiceNumber();
         }
-        
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
     }
 
     closeModal() {
         const modal = document.getElementById('invoiceModal');
-        modal.classList.remove('show');
-        document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
         this.currentEditingId = null;
     }
 
     openDeleteModal(invoiceId) {
         this.currentEditingId = invoiceId;
         const modal = document.getElementById('deleteModal');
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
     }
 
     closeDeleteModal() {
         const modal = document.getElementById('deleteModal');
-        modal.classList.remove('show');
-        document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
         this.currentEditingId = null;
     }
 
     resetForm() {
-        document.getElementById('invoiceForm').reset();
+        const form = document.getElementById('invoiceForm');
+        if (form) form.reset();
         this.setDefaultDates();
         this.clearItems();
         this.addItemRow();
@@ -417,21 +475,26 @@ class InvoiceManager {
         const invoice = this.invoices.find(inv => inv.id === invoiceId && inv.userId === this.userId);
         if (!invoice) return;
 
-        document.getElementById('invoiceNumber').value = invoice.invoiceNumber || '';
-        document.getElementById('invoiceDate').value = invoice.invoiceDate || '';
-        document.getElementById('dueDate').value = invoice.dueDate || '';
-        document.getElementById('customerName').value = invoice.customerName || invoice.customer || '';
-        document.getElementById('customerEmail').value = invoice.customerEmail || '';
-        document.getElementById('customerAddress').value = invoice.customerAddress || '';
-        document.getElementById('status').value = invoice.status || 'draft';
-        document.getElementById('notes').value = invoice.notes || '';
-        document.getElementById('taxRate').value = invoice.taxRate || 0;
+        const fields = {
+            invoiceNumber: invoice.invoiceNumber || '',
+            invoiceDate: invoice.invoiceDate || '',
+            dueDate: invoice.dueDate || '',
+            customerName: invoice.customerName || invoice.customer || '',
+            customerEmail: invoice.customerEmail || '',
+            customerAddress: invoice.customerAddress || '',
+            status: invoice.status || 'draft',
+            notes: invoice.notes || '',
+            taxRate: invoice.taxRate || 0,
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        });
 
         this.clearItems();
         if (invoice.items && invoice.items.length > 0) {
-            invoice.items.forEach(item => {
-                this.addItemRow(item);
-            });
+            invoice.items.forEach(item => this.addItemRow(item));
         } else {
             this.addItemRow();
         }
@@ -441,14 +504,16 @@ class InvoiceManager {
 
     clearItems() {
         const container = document.getElementById('itemsContainer');
-        container.innerHTML = '';
+        if (container) container.innerHTML = '';
     }
 
     addItemRow(item = null) {
         const container = document.getElementById('itemsContainer');
+        if (!container) return;
+
         const itemRow = document.createElement('div');
         itemRow.className = 'item-row';
-        
+
         itemRow.innerHTML = `
             <div class="form-group">
                 <label>Description</label>
@@ -473,9 +538,9 @@ class InvoiceManager {
                 </button>
             </div>
         `;
-        
+
         container.appendChild(itemRow);
-        
+
         if (item) {
             this.calculateItemTotal(itemRow.querySelector('.item-quantity'));
         }
@@ -484,8 +549,8 @@ class InvoiceManager {
     removeItemRow(button) {
         const itemRow = button.closest('.item-row');
         const container = document.getElementById('itemsContainer');
-        
-        if (container.children.length > 1) {
+
+        if (container && container.children.length > 1) {
             itemRow.remove();
             this.calculateTotals();
         }
@@ -496,7 +561,7 @@ class InvoiceManager {
         const quantity = parseFloat(itemRow.querySelector('.item-quantity').value) || 0;
         const price = parseFloat(itemRow.querySelector('.item-price').value) || 0;
         const total = quantity * price;
-        
+
         itemRow.querySelector('.item-total').value = total.toFixed(2);
         this.calculateTotals();
     }
@@ -504,38 +569,51 @@ class InvoiceManager {
     calculateTotals() {
         const itemRows = document.querySelectorAll('.item-row');
         let subtotal = 0;
-        
+
         itemRows.forEach(row => {
             const total = parseFloat(row.querySelector('.item-total').value) || 0;
             subtotal += total;
         });
-        
-        const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+
+        const taxRateEl = document.getElementById('taxRate');
+        const taxRate = taxRateEl ? (parseFloat(taxRateEl.value) || 0) : 0;
         const taxAmount = (subtotal * taxRate) / 100;
         const total = subtotal + taxAmount;
-        
-        document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-        document.getElementById('taxAmount').textContent = `$${taxAmount.toFixed(2)}`;
-        document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+
+        const subtotalEl = document.getElementById('subtotal');
+        const taxAmountEl = document.getElementById('taxAmount');
+        const totalAmountEl = document.getElementById('totalAmount');
+
+        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+        if (taxAmountEl) taxAmountEl.textContent = `$${taxAmount.toFixed(2)}`;
+        if (totalAmountEl) totalAmountEl.textContent = `$${total.toFixed(2)}`;
     }
 
     async handleFormSubmit(e) {
         e.preventDefault();
-        
+
         const items = this.getItemsFromForm();
-        
+
         if (items.length === 0) {
             this.showNotification('Please add at least one item to the invoice.', 'error');
             return;
         }
-        
+
+        const customerName = document.getElementById('customerName').value.trim();
+        const customerEmail = document.getElementById('customerEmail').value.trim();
+
+        if (!customerName || !customerEmail) {
+            this.showNotification('Customer name and email are required.', 'error');
+            return;
+        }
+
         const invoiceData = {
             user_id: this.userId,
             invoiceNumber: document.getElementById('invoiceNumber').value,
             invoiceDate: document.getElementById('invoiceDate').value,
             dueDate: document.getElementById('dueDate').value,
-            customerName: document.getElementById('customerName').value,
-            customerEmail: document.getElementById('customerEmail').value,
+            customerName,
+            customerEmail,
             customerAddress: document.getElementById('customerAddress').value,
             items: items,
             subtotal: parseFloat(document.getElementById('subtotal').textContent.replace('$', '')),
@@ -545,14 +623,14 @@ class InvoiceManager {
             status: document.getElementById('status').value,
             notes: document.getElementById('notes').value
         };
-        
+
         try {
             if (this.currentEditingId) {
                 await this.updateInvoice(this.currentEditingId, invoiceData);
             } else {
                 await this.addInvoice(invoiceData);
             }
-            
+
             this.closeModal();
             await this.loadInvoices();
             this.updateStatistics();
@@ -566,13 +644,13 @@ class InvoiceManager {
     getItemsFromForm() {
         const items = [];
         const itemRows = document.querySelectorAll('.item-row');
-        
+
         itemRows.forEach(row => {
             const description = row.querySelector('.item-description').value.trim();
             const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
             const price = parseFloat(row.querySelector('.item-price').value) || 0;
             const total = parseFloat(row.querySelector('.item-total').value) || 0;
-            
+
             if (description && quantity > 0 && price >= 0) {
                 items.push({
                     description,
@@ -582,20 +660,23 @@ class InvoiceManager {
                 });
             }
         });
-        
+
         return items;
     }
 
     async addInvoice(invoiceData) {
         try {
-            // First, create or get customer
+            if (!invoiceData.customerName || !invoiceData.customerEmail) {
+                throw new Error('Customer name and email are required');
+            }
+
+            // Create or get customer
             let customerId = await this.getOrCreateCustomer(invoiceData.customerName, invoiceData.customerEmail);
-            
             if (!customerId) {
                 throw new Error('Failed to create or find customer. Please check customer details.');
             }
-            
-            // Map frontend status to match database expectations
+
+            // Map frontend status to DB expectations handled on backend; keep semantic here
             const statusMap = {
                 'paid': 'paid',
                 'unpaid': 'unpaid',
@@ -604,14 +685,13 @@ class InvoiceManager {
                 'sent': 'unpaid'
             };
             const mappedStatus = statusMap[invoiceData.status] || 'unpaid';
-            
-            // Create invoice with backend structure (matching actual DB schema)
+
             const invoicePayload = {
                 customer_id: customerId,
                 total: invoiceData.total,
                 status: mappedStatus
             };
-            
+
             await ApiService.post('/invoices', invoicePayload);
             this.showNotification('Invoice created successfully!', 'success');
             await this.loadInvoices();
@@ -623,14 +703,15 @@ class InvoiceManager {
 
     async updateInvoice(invoiceId, invoiceData) {
         try {
-            // Create or get customer
+            if (!invoiceData.customerName || !invoiceData.customerEmail) {
+                throw new Error('Customer name and email are required');
+            }
+
             let customerId = await this.getOrCreateCustomer(invoiceData.customerName, invoiceData.customerEmail);
-            
             if (!customerId) {
                 throw new Error('Failed to create or find customer.');
             }
-            
-            // Map frontend status
+
             const statusMap = {
                 'paid': 'paid',
                 'unpaid': 'unpaid',
@@ -639,13 +720,13 @@ class InvoiceManager {
                 'sent': 'unpaid'
             };
             const mappedStatus = statusMap[invoiceData.status] || 'unpaid';
-            
+
             const invoicePayload = {
                 customer_id: customerId,
                 total: invoiceData.total,
                 status: mappedStatus
             };
-            
+
             await ApiService.put(`/invoices/${invoiceId}`, invoicePayload);
             this.showNotification('Invoice updated successfully!', 'success');
             await this.loadInvoices();
@@ -675,10 +756,15 @@ class InvoiceManager {
                 throw new Error('Customer name and email are required');
             }
 
-            // Try to get existing customer
-            const customers = await ApiService.get(`/customers/${this.userId}`);
+            // Get existing customers for user
+            let customers = await ApiService.get(`/customers/${this.userId}`);
+            if (!Array.isArray(customers)) {
+                console.warn('Unexpected customers response shape:', customers);
+                customers = [];
+            }
+
             let customer = customers.find(c => c.email === email);
-            
+
             if (!customer) {
                 // Create new customer
                 const response = await ApiService.post('/customers', {
@@ -686,16 +772,39 @@ class InvoiceManager {
                     name: name,
                     email: email
                 });
-                
-                // Get updated list to get the new customer ID
-                const updatedCustomers = await ApiService.get(`/customers/${this.userId}`);
-                customer = updatedCustomers.find(c => c.email === email);
-                
+
+                console.log('Customer creation response:', response);
+
+                let createdId = null;
+                if (response && typeof response === 'object') {
+                    if (response.id) {
+                        createdId = response.id;
+                    } else if (response.customer && response.customer.id) {
+                        createdId = response.customer.id;
+                        customer = response.customer;
+                    } else if (response.data && response.data.id) {
+                        createdId = response.data.id;
+                        customer = response.data;
+                    }
+                }
+
+                if (createdId && !customer) {
+                    customer = { id: createdId, email, name };
+                }
+
                 if (!customer) {
-                    throw new Error('Customer was created but could not be retrieved');
+                    const updatedCustomers = await ApiService.get(`/customers/${this.userId}`);
+                    if (Array.isArray(updatedCustomers)) {
+                        customer = updatedCustomers.find(c => c.email === email);
+                    }
+                }
+
+                if (!customer) {
+                    const statusText = (response && response.status) ? `status: ${response.status}` : 'no customer payload';
+                    throw new Error(`Customer was created but could not be retrieved (${statusText}).`);
                 }
             }
-            
+
             return customer.id;
         } catch (error) {
             console.error('Error managing customer:', error);
@@ -706,31 +815,30 @@ class InvoiceManager {
     async loadInvoices() {
         try {
             const invoices = await ApiService.get(`/invoices/${this.userId}`);
-            // Transform backend data to frontend format
+
             this.invoices = invoices.map(inv => {
-                // Map database status back to frontend status
                 const statusMap = {
                     'Paid': 'paid',
                     'Unpaid': 'unpaid',
                     'Overdue': 'overdue'
                 };
-                
+
                 return {
                     id: inv.id,
-                    userId: inv.user_id, // From joined customers table
-                    invoiceNumber: `INV-${inv.id.toString().padStart(4, '0')}`, // Generate from ID
+                    userId: inv.user_id,
+                    invoiceNumber: `INV-${inv.id.toString().padStart(4, '0')}`,
                     invoiceDate: inv.created_at || new Date().toISOString().split('T')[0],
-                    dueDate: inv.created_at || new Date().toISOString().split('T')[0], // Use created_at as fallback
+                    dueDate: inv.created_at || new Date().toISOString().split('T')[0],
                     customerName: inv.customer_name || '',
                     customerEmail: inv.customer_email || '',
-                    customerAddress: '', // Not stored in DB
-                    items: [], // Not stored in DB - would need separate table
+                    customerAddress: '',
+                    items: [],
                     subtotal: parseFloat(inv.total) || 0,
-                    taxRate: 0, // Not stored in DB
-                    taxAmount: 0, // Not stored in DB
+                    taxRate: 0,
+                    taxAmount: 0,
                     total: parseFloat(inv.total) || 0,
                     status: statusMap[inv.status] || 'unpaid',
-                    notes: '', // Not stored in DB
+                    notes: '',
                     createdAt: inv.created_at,
                     updatedAt: inv.created_at
                 };
@@ -752,15 +860,17 @@ class InvoiceManager {
         const userInvoices = this.invoices.filter(inv => inv.userId === this.userId);
         const tbody = document.getElementById('invoicesTableBody');
         const noInvoices = document.getElementById('noInvoices');
-        
+
+        if (!tbody || !noInvoices) return;
+
         if (userInvoices.length === 0) {
             tbody.innerHTML = '';
             noInvoices.style.display = 'block';
             return;
         }
-        
+
         noInvoices.style.display = 'none';
-        
+
         tbody.innerHTML = userInvoices.map(invoice => `
             <tr>
                 <td><strong>${invoice.invoiceNumber}</strong></td>
@@ -789,29 +899,29 @@ class InvoiceManager {
     }
 
     filterInvoices() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
-        const dateFilter = document.getElementById('dateFilter').value;
-        
+        const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
+        const dateFilter = document.getElementById('dateFilter')?.value || '';
+
         let filteredInvoices = this.invoices.filter(inv => inv.userId === this.userId);
-        
+
         if (searchTerm) {
-            filteredInvoices = filteredInvoices.filter(invoice => 
+            filteredInvoices = filteredInvoices.filter(invoice =>
                 invoice.invoiceNumber.toLowerCase().includes(searchTerm) ||
                 invoice.customerName.toLowerCase().includes(searchTerm) ||
                 invoice.customerEmail.toLowerCase().includes(searchTerm)
             );
         }
-        
+
         if (statusFilter) {
             filteredInvoices = filteredInvoices.filter(invoice => invoice.status === statusFilter);
         }
-        
+
         if (dateFilter) {
             const now = new Date();
             filteredInvoices = filteredInvoices.filter(invoice => {
                 const invoiceDate = new Date(invoice.invoiceDate);
-                
+
                 switch (dateFilter) {
                     case 'today':
                         return invoiceDate.toDateString() === now.toDateString();
@@ -826,24 +936,28 @@ class InvoiceManager {
                 }
             });
         }
-        
+
         this.renderFilteredInvoices(filteredInvoices);
     }
 
     renderFilteredInvoices(invoices) {
         const tbody = document.getElementById('invoicesTableBody');
         const noInvoices = document.getElementById('noInvoices');
-        
+
+        if (!tbody || !noInvoices) return;
+
         if (invoices.length === 0) {
             tbody.innerHTML = '';
             noInvoices.style.display = 'block';
-            noInvoices.querySelector('h3').textContent = 'No invoices found';
-            noInvoices.querySelector('p').textContent = 'Try adjusting your search or filter criteria';
+            const h3 = noInvoices.querySelector('h3');
+            const p = noInvoices.querySelector('p');
+            if (h3) h3.textContent = 'No invoices found';
+            if (p) p.textContent = 'Try adjusting your search or filter criteria';
             return;
         }
-        
+
         noInvoices.style.display = 'none';
-        
+
         tbody.innerHTML = invoices.map(invoice => `
             <tr>
                 <td><strong>${invoice.invoiceNumber}</strong></td>
@@ -875,17 +989,22 @@ class InvoiceManager {
         const userInvoices = this.invoices.filter(inv => inv.userId === this.userId);
         const totalInvoices = userInvoices.length;
         const totalAmount = userInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
-        const pendingInvoices = userInvoices.filter(invoice => 
-            invoice.status === 'draft' || invoice.status === 'sent'
+        const pendingInvoices = userInvoices.filter(invoice =>
+            invoice.status === 'draft' || invoice.status === 'sent' || invoice.status === 'unpaid'
         ).length;
-        const paidInvoices = userInvoices.filter(invoice => 
+        const paidInvoices = userInvoices.filter(invoice =>
             invoice.status === 'paid'
         ).length;
-        
-        document.getElementById('totalInvoices').textContent = totalInvoices;
-        document.getElementById('totalAmount').textContent = `$${totalAmount.toFixed(2)}`;
-        document.getElementById('pendingInvoices').textContent = pendingInvoices;
-        document.getElementById('paidInvoices').textContent = paidInvoices;
+
+        const totalInvoicesEl = document.getElementById('totalInvoices');
+        const totalAmountEl = document.getElementById('totalAmount');
+        const pendingInvoicesEl = document.getElementById('pendingInvoices');
+        const paidInvoicesEl = document.getElementById('paidInvoices');
+
+        if (totalInvoicesEl) totalInvoicesEl.textContent = totalInvoices;
+        if (totalAmountEl) totalAmountEl.textContent = `$${totalAmount.toFixed(2)}`;
+        if (pendingInvoicesEl) pendingInvoicesEl.textContent = pendingInvoices;
+        if (paidInvoicesEl) paidInvoicesEl.textContent = paidInvoices;
     }
 
     formatDate(dateString) {
@@ -905,7 +1024,7 @@ class InvoiceManager {
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
             <span>${message}</span>
         `;
-        
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -922,9 +1041,9 @@ class InvoiceManager {
             font-weight: 500;
             animation: slideInRight 0.3s ease;
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => {
@@ -949,7 +1068,7 @@ style.textContent = `
             opacity: 1;
         }
     }
-    
+
     @keyframes slideOutRight {
         from {
             transform: translateX(0);

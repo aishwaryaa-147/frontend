@@ -144,11 +144,15 @@ body {
 }
 
 .auth-form .form-group label {
-    display: block;
+    display: block !important;
     margin-bottom: 8px;
     font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9rem;
+    color: var(--text-primary) !important;
+    font-size: 0.95rem;
+    opacity: 1 !important;
+    visibility: visible !important;
+    line-height: 1.5;
+    text-align: left;
 }
 
 .auth-form .form-group input {
@@ -690,8 +694,13 @@ form {
 .form-group label {
     margin-bottom: 8px;
     font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9rem;
+    color: var(--text-primary) !important;
+    font-size: 0.95rem;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    line-height: 1.5;
+    text-align: left;
 }
 
 .form-group input,
